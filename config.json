@@ -1,7 +1,8 @@
 {
   "name": "Sungrow Monitor",
-  "version": "0.3",
+  "version": "0.4",
   "slug": "sungrow_monitor",
+  "init": false,
   "description": "Connect to Sungrow Inverters via Modbus protocol to get data and export it to PVOutput website and MQTT broker",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
   "startup": "before",

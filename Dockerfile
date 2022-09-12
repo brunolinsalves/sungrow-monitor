@@ -11,7 +11,8 @@ RUN apk add build-base
 RUN pip install config==0.4.0
 RUN pip install requests==2.20.0
 RUN pip install python_dateutil==2.6.1
-RUN pip install pytz==2017.2
+#RUN pip install pytz==2017.2
+RUN pip install pytz
 RUN pip install pymodbus==2.4.0
 RUN pip install paho-mqtt==1.5.1
 RUN pip install pycrypto==2.6.1

@@ -20,9 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+from collections.abc import Mapping
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
 from pymodbus.client.sync import ModbusTcpClient
+from pymodbus.exceptions import ModbusIOException
 from pytz import timezone
 import config
 import json
@@ -120,6 +122,7 @@ def load_register(registers):
       thisdate = str(datetime.datetime.now(timezone(config.timezone))).partition('.')[0]
       thiserrormessage = thisdate + ': Connection not possible. Check settings or connection.'
       print (thiserrormessage)
+      time.sleep(10 * 60)
 
       if (count % 10 == 0):
         error_time = datetime.datetime.now( timezone(config.timezone) )
@@ -199,10 +202,17 @@ count=0
 
 #main program loop
 def main():
-  global count
+  global count, client
   try:
     global inverter
     inverter = {}
+
+    if client == None:
+      client = sungrow.SungrowModbusTcpClient(host=INVERTER_HOST,
+                                              timeout=config.timeout,
+                                              RetryOnEmpty=True,
+                                              retries=3,
+                                              port=INVERTER_PORT)
 
     load_register(modmap.sungrow_registers)
 
@@ -232,13 +242,15 @@ def main():
       # we are done with the connection for now so close it
     client.close()
   except ModbusIOException as err:
-    print ("[ERROR] %s" % err)
+    print ("[ERROR1] %s" % err)
     print ("  - Exiting with error code 1 to home assistant restart the Addon...")
     client.close()
+    client = None
     sys.exit(1)
   except Exception as err:
-    print ("[ERROR] %s" % err)
+    print ("[ERROR2] %s" % err)
     client.close()
+    client = None
   #increment counter
   count+=1
 
@@ -291,8 +303,13 @@ def main():
           raise StandardError(response.text)
       else:
           print ("Successfully posted to %s" % config.pv_url)
+    except ModbusIOException as err:
+      print ("[ERROR3] %s" % err)
+      print ("  - Exiting with error code 1 to home assistant restart the Addon...")
+      client.close()
+      sys.exit(1)
     except Exception as err:
-      print ("[ERROR] %s" % err)
+      print ("[ERROR4] %s" % err)
 
   #sleep until next iteration
   print ("Loop %d of %d complete. Sleeping %ds...." % (count, (60/config.scan_interval)*config.upload_interval, config.scan_interval))
